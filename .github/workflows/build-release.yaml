@@ -3,21 +3,9 @@ name: Build Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Input Version (contoh: 2.11.22 atau v2.11.22)'
+      release-tag:
+        description: 'Release Tag (v2.x.x)'
         required: true
-        type: string
-      publish_release:
-        description: 'Publish GitHub Release? (true = signed release)'
-        required: true
-        type: choice
-        options: ["false", "true"]
-        default: "false"
-      version_suffix:
-        description: 'App - YinnClash MetaBoxUi (opsional: -zivpn / -alpha)'
-        required: false
-        type: string
-        default: ""
 
 jobs:
   BuildRelease:
@@ -43,11 +31,10 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.23.x"
-          check-latest: true
+          go-version: "1.25"
+          check-latest: true # Always check for the latest patch release
 
-      - name: Cache Go
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -55,110 +42,87 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-
+      
       - name: Convert and set version env
         id: process-version
-        shell: bash
         run: |
-          VERSION_INPUT="${{ inputs.version }}"
-          VERSION_INPUT="${VERSION_INPUT#v}"
-
-          if [[ ! "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version format. Use x.y.z or vx.y.z (contoh: 2.11.22 / v2.11.22)"
-            exit 1
-          fi
-
-          IFS='.' read -ra V <<< "$VERSION_INPUT"
-          VERSION_CODE=$(printf "%1d%02d%03d" "${V[0]}" "${V[1]}" "${V[2]}")
-
-          SUFFIX="${{ inputs.version_suffix }}"
-          VERSION_NAME="${VERSION_INPUT}${SUFFIX}"
-
-          echo "versionName=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
-          echo "tag=v$VERSION_INPUT" >> $GITHUB_OUTPUT
-
+          VERSION_TAG=${{ inputs.release-tag }}
+          VERSION_TAG=${VERSION_TAG#v}                              # remove the 'v' prefix
+          IFS='.' read -ra VERSION_PARTS <<< "$VERSION_TAG"         # split into array
+          VERSION_CODE=$(printf "%1d%02d%03d" "${VERSION_PARTS[0]}" "${VERSION_PARTS[1]}" "${VERSION_PARTS[2]}")
+          
+          echo "versonName=$VERSION_TAG" >> $GITHUB_OUTPUT          # "1.2.3"
+          echo "versonCode=$VERSION_CODE" >> $GITHUB_OUTPUT         # "102003"
+      
+      # Re-write version in build.gradle.kts
       - name: Re-write version
         uses: Devofure/advance-android-version-actions@v1.5
         with:
           gradlePath: build.gradle.kts
-          versionCode: ${{ steps.process-version.outputs.versionCode }}
-          versionName: ${{ steps.process-version.outputs.versionName }}
+          versionCode: ${{ steps.process-version.outputs.versonCode }}
+          versionName: ${{ steps.process-version.outputs.versonName }}
 
-      - name: Commit changes locally (no push)
+      # If any change found, commit it and push
+      - name: Commit and push if changes
         run: |
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
-          git add build.gradle.kts || true
-          git commit -m "Bump version to ${{ steps.process-version.outputs.versionName }} (${{ steps.process-version.outputs.versionCode }})" || true
+          changes=$(git diff --name-only origin/main | wc -l)
+          if [ $changes -gt 0 ]
+          then
+            newVersionName=${{ steps.process-version.outputs.versonName }}
+            newVersionCode=${{ steps.process-version.outputs.versonCode }}
+            git config --global user.name 'GitHub Action'
+            git config --global user.email 'action@github.com'
+            git add build.gradle.kts
+            git commit -am "Bump version to $newVersionName ($newVersionCode)"
+            git tag "v$newVersionName"
+            git push --follow-tags
+          fi
 
       - name: Update CA
         run: |
-          sudo apt-get update && sudo apt-get install -y ca-certificates
+          sudo apt-get update && sudo apt-get install ca-certificates
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      # ✅ Kalau publish_release=false: bikin debug keystore lokal & inject ke Gradle
-      - name: Create debug keystore (for non-publish builds)
-        if: ${{ inputs.publish_release == 'false' }}
-        shell: bash
-        run: |
-          keytool -genkeypair -v \
-            -keystore debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
-
-      # ✅ Kalau publish_release=true: pakai signing.properties dari Secrets
-      - name: Signing properties (publish only)
-        if: ${{ inputs.publish_release == 'true' }}
+      - name: Signing properties
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          rm -f signing.properties
+          touch signing.properties
           echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
           echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
           echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
+            
+          echo "cat signing.properties"
+          cat signing.properties
 
-      - name: Build APK (MetaDebug if no publish)
-        shell: bash
-        run: |
-          if [ "${{ inputs.publish_release }}" = "true" ]; then
-            echo "Building MetaRelease (SIGNED)..."
-            ./gradlew --no-daemon app:assembleMetaRelease --stacktrace --info
-          else
-            echo "Building MetaDebug (NO KEYSTORE / injected debug signing)..."
-            ./gradlew --no-daemon app:assembleMetaDebug --stacktrace --info \
-              -Pandroid.injected.signing.store.file="$PWD/debug.keystore" \
-              -Pandroid.injected.signing.store.password=android \
-              -Pandroid.injected.signing.key.alias=androiddebugkey \
-              -Pandroid.injected.signing.key.password=android
-          fi
+      - name: Release Build
+        if: success()
+        run: ./gradlew --no-daemon app:assembleMetaRelease
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        if: ${{ success() }}
+      - name: Tag Repo
+        uses: richardsimko/update-tag@v1
         with:
-          name: apks
-          path: |
-            app/build/outputs/apk/**/**/*.apk
-
-      - name: Create Tag
-        if: ${{ inputs.publish_release == 'true' }}
-        run: |
-          git tag "${{ steps.process-version.outputs.tag }}" || true
-          git push origin "${{ steps.process-version.outputs.tag }}" || true
+          tag_name: ${{ inputs.release-tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release
         uses: softprops/action-gh-release@v1
-        if: ${{ inputs.publish_release == 'true' && success() }}
+        if: ${{ success() }}
         with:
-          tag_name: ${{ steps.process-version.outputs.tag }}
+          tag_name: ${{ inputs.release-tag }}
           files: app/build/outputs/apk/meta/release/*
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Changelog Builder
+        uses: mikepenz/release-changelog-builder-action@v4.1.1
+        with:
+          configurationJson: |
+            {
+              "ignore_labels": [
+                "Update"
+              ],
+            }
