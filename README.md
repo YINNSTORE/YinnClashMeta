@@ -1,131 +1,107 @@
 # 🚀 YinnClash
 
-> ⚡ **Modern & Powerful Network Client for Android**  
-> Rebranded and customized build based on open-source Clash Meta technology.
+YinnClash adalah aplikasi Android berbasis *network client* yang dibangun dari project open-source **Clash Meta**, lalu dimodifikasi dan direbranding sesuai kebutuhan pribadi.
+
+Project ini dibuat untuk penggunaan **private**, eksperimen, dan pembelajaran.  
+🚫 Bukan aplikasi VPN publik dan **tidak menyediakan server bawaan**.
 
 ---
 
-## ✨ Tentang YinnClash
+## 📌 Tentang Project
 
-**YinnClash** adalah aplikasi Android berbasis *network client* yang dirancang untuk pengguna tingkat lanjut yang membutuhkan kontrol penuh terhadap koneksi jaringan mereka.
+YinnClash berfokus pada:
+- ⚡ stabilitas
+- 🚀 performa
+- 🎨 UI yang bersih
+- 🛠️ build yang fleksibel (debug / release)
 
-Project ini merupakan hasil **rebranding dan modifikasi independen**, dengan fokus pada:
-- Performa tinggi
-- Stabilitas koneksi
-- UI bersih & modern
-- Build fleksibel (Debug / Release)
+Sebagian besar struktur dan core berasal dari project upstream, dengan beberapa penyesuaian di sisi:
+- 🖌️ tampilan
+- 🏷️ branding
+- 🔄 workflow build
+- ⚙️ konfigurasi tambahan
 
 ---
 
-## 🔥 Fitur Utama
+## ✨ Fitur
 
-- 🌐 Dukungan multi-protocol (Meta Core)
-- ⚙️ Rule-based routing system
-- 📊 Real-time traffic & connection monitor
-- 🧩 Modular architecture (Core / Service / Design)
-- 🎨 UI modern & ringan
-- 🛠️ Build automation via GitHub Actions
-- 📦 APK siap pakai (tanpa Play Store)
+- 🌐 Mendukung Clash Meta core
+- 📏 Rule-based routing
+- 📊 Monitoring koneksi & traffic
+- 🧩 Multi-architecture build (arm64, armv7, x86)
+- 🤖 Build otomatis via GitHub Actions
+- 📦 APK bisa langsung dipakai (tanpa Play Store)
 
 ---
 
 ## 📱 Platform
 
-- **Android** (ARM64, ARMv7, x86, x86_64)
-- Minimum Android: **Android 7+**
-- Target: **Advanced / Power User**
+- 🤖 Android
+- 🔻 Minimal Android 7+
+- ✅ Disarankan perangkat **arm64-v8a**
 
 ---
 
-## 🏗️ Build & Release
+## 🏗️ Build & Distribusi
 
-YinnClash menggunakan **CI/CD GitHub Actions** untuk otomatisasi build.
+Project ini menggunakan **GitHub Actions** untuk build otomatis.
 
-### 🔹 Build Mode
-- **MetaDebug**  
-  - Tidak perlu keystore  
-  - Auto-signed (debug)  
-  - Cocok untuk testing & distribusi bebas  
+### 🔧 Mode Build
+- **MetaDebug**
+  - ❌ Tidak butuh keystore
+  - 🔐 Auto-signed debug
+  - 🧪 Cocok untuk testing dan pemakaian pribadi
 
-- **MetaRelease**  
-  - Signed (keystore)  
-  - Siap untuk rilis resmi / jangka panjang  
+- **MetaRelease**
+  - 🔑 Signed dengan keystore
+  - 📦 Untuk rilis jangka panjang
 
----
-
-## ⬇️ Download
-
-📦 Semua build tersedia di halaman **GitHub Releases**:
-
-👉 **Releases** → Download APK sesuai arsitektur perangkat kamu
-
-> 💡 Disarankan menggunakan versi **arm64-v8a** untuk perangkat modern.
+APK hasil build bisa diunduh dari:
+- 📥 **GitHub Releases**
+- 📂 **Artifacts** di GitHub Actions
 
 ---
 
 ## ⚠️ Catatan Penting
 
-- Aplikasi ini **bukan VPN gratis publik**
-- Tidak menyediakan server bawaan
-- Konfigurasi koneksi sepenuhnya ditentukan oleh pengguna
-- Cocok untuk:
-  - Private server
-  - Advanced networking
-  - Educational & research purpose
+- 🚫 Aplikasi ini **tidak menyediakan akun, server, atau konfigurasi default**
+- ⚙️ Semua konfigurasi koneksi ditentukan oleh pengguna
+- 🎯 Cocok untuk:
+  - private server
+  - advanced networking
+  - penggunaan pribadi / internal
 
 ---
 
-## 🧠 Kredit & Apresiasi (Original Credits)
+## 🙏 Credit / Acknowledgement
 
-Project ini **tidak dibuat dari nol**, dan berdiri di atas kerja keras komunitas open-source.
+Project ini berdiri di atas karya open-source.  
+Penghargaan penuh untuk para pengembang aslinya:
 
-Penghargaan penuh diberikan kepada:
+- 🧠 **MetaCubeX** — pengembang Clash Meta dan core terkait  
+- 📱 **Clash Meta for Android** — sebagai basis utama aplikasi Android  
+- 👥 Seluruh kontributor open-source (Go libraries, Android tooling, dsb)
 
-- **MetaCubeX**  
-  Pengembang utama **Clash Meta** dan ekosistem terkait  
-  Repository: https://github.com/MetaCubeX
-
-- **Clash Meta for Android**  
-  Project Android client utama yang menjadi dasar aplikasi ini  
-  Repository: https://github.com/MetaCubeX/ClashMetaForAndroid
-
-- **Clash / Meta Core Contributors**  
-  Untuk pengembangan core networking, protocol, dan optimasi performa
-
-- Seluruh kontributor open-source terkait  
-  (Go libraries, Android components, dan tooling)
-
-> 🙏 Tanpa project open-source di atas, **YinnClash tidak akan ada**.
+Tanpa project-project di atas, **YinnClash tidak akan ada**.
 
 ---
 
 ## ⚖️ Lisensi & Pernyataan
 
-- Project ini **mengikuti lisensi asli** dari project upstream
-- **YinnClash adalah rebrand independen**
-- ❌ BUKAN aplikasi resmi MetaCubeX
+- 📄 Mengikuti lisensi dari project upstream
+- 🧩 YinnClash adalah **rebrand independen**
+- ❌ Bukan aplikasi resmi MetaCubeX
 - ❌ Tidak berafiliasi dengan Clash Meta official
-- ❌ Tidak menggunakan logo / branding resmi MetaCubeX
+- ❌ Tidak menggunakan branding atau logo resmi upstream
 
 ---
 
-## 📬 Kontak & Dukungan
+## 🛠️ Dukungan
 
-Jika kamu menggunakan YinnClash untuk kebutuhan private atau pengembangan lanjutan:
-
-- 📧 Support: *via GitHub Issues*
-- 🛠️ Development: *Private build supported*
-
----
-
-## ⭐ Dukungan
-
-Jika project ini membantu kamu:
-- ⭐ Star repository ini
-- 🧪 Laporkan bug / issue
-- 💡 Kirim saran pengembangan
+Kalau menemukan bug atau ingin diskusi teknis:
+- 🐞 gunakan **GitHub Issues**
+- 🔧 pull request selalu terbuka untuk perbaikan kecil
 
 ---
 
-> **YinnClash** — Control your network, your way.  
-> ⚡ Fast • Stable • Customizable
+🙏 Jika project ini berguna buat kamu, silakan gunakan dengan bijak.
