@@ -4,8 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       release-tag:
-        description: 'Release Tag (v2.x.x)'
+        description: "Release Tag (v2.x.x)"
         required: true
+        type: string
+
+      publish_release:
+        description: "Upload to GitHub Release?"
+        required: true
+        type: choice
+        options: ["false", "true"]
+        default: "false"
 
 jobs:
   BuildRelease:
@@ -15,6 +23,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Fetch tags (fix changelog/tag issues)
+        shell: bash
+        run: |
+          git fetch --force --tags
 
       - name: Checkout submodules
         run: git submodule update --init --recursive --force
@@ -50,8 +63,14 @@ jobs:
           VERSION_TAG="${{ inputs.release-tag }}"
           VERSION_TAG="${VERSION_TAG#v}"
 
-          IFS='.' read -ra VERSION_PARTS <<< "$VERSION_TAG"
-          VERSION_CODE=$(printf "%1d%02d%03d" "${VERSION_PARTS[0]}" "${VERSION_PARTS[1]}" "${VERSION_PARTS[2]}")
+          # basic check x.y.z
+          if [[ ! "$VERSION_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid tag format. Use vX.Y.Z (contoh: v2.11.22)"
+            exit 1
+          fi
+
+          IFS='.' read -ra V <<< "$VERSION_TAG"
+          VERSION_CODE=$(printf "%1d%02d%03d" "${V[0]}" "${V[1]}" "${V[2]}")
 
           echo "versionName=$VERSION_TAG" >> $GITHUB_OUTPUT
           echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
@@ -69,17 +88,19 @@ jobs:
       - name: Commit and push if changes
         shell: bash
         run: |
-          changes=$(git diff --name-only origin/main | wc -l)
-          if [ "$changes" -gt 0 ]; then
-            newVersionName="${{ steps.process-version.outputs.versionName }}"
-            newVersionCode="${{ steps.process-version.outputs.versionCode }}"
-            git config --global user.name 'GitHub Action'
-            git config --global user.email 'action@github.com'
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+          # commit if changed
+          if ! git diff --quiet; then
             git add build.gradle.kts
-            git commit -am "Bump version to $newVersionName ($newVersionCode)" || true
-            git tag "v$newVersionName" || true
-            git push --follow-tags
+            git commit -m "Bump version to ${{ steps.process-version.outputs.versionName }} (${{ steps.process-version.outputs.versionCode }})" || true
+            git push || true
           fi
+
+          # create tag (local + push) biar changelog/relase kebaca
+          git tag "${{ inputs.release-tag }}" || true
+          git push origin "${{ inputs.release-tag }}" || true
 
       - name: Update CA
         run: |
@@ -87,14 +108,12 @@ jobs:
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      # ✅ NEW: Decode keystore dari secret (WAJIB)
       - name: Decode release keystore
         shell: bash
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
           ls -lah release.keystore
 
-      # ✅ NEW: Verify keystore (biar kalau salah langsung ketauan)
       - name: Verify keystore alias & password
         shell: bash
         run: |
@@ -115,36 +134,48 @@ jobs:
           key.alias=$SIGNING_KEY_ALIAS
           key.password=$SIGNING_KEY_PASSWORD
           EOF
-
           echo "signing.properties created ✅"
-          cat signing.properties
 
       - name: Release Build
         run: ./gradlew --no-daemon app:assembleMetaRelease
 
-      - name: Tag Repo
-        uses: richardsimko/update-tag@v1
-        with:
-          tag_name: ${{ inputs.release-tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # ✅ Ambil 1 APK aja: arm64-v8a (bukan universal)
+      - name: Pick single APK (arm64-v8a) and rename
+        shell: bash
+        run: |
+          APK_PATH="$(ls -1 app/build/outputs/apk/meta/release/*arm64-v8a*-release*.apk | head -n 1)"
+          if [ -z "$APK_PATH" ]; then
+            echo "arm64-v8a APK not found!"
+            ls -lah app/build/outputs/apk/meta/release/ || true
+            exit 1
+          fi
 
+          OUT="YinnClash-${{ inputs.release-tag }}-arm64.apk"
+          cp "$APK_PATH" "$OUT"
+          echo "Selected: $APK_PATH"
+          echo "Output: $OUT"
+          ls -lah "$OUT"
+
+      # ✅ Upload Release: hanya kalau publish_release=true
       - name: Upload Release
         uses: softprops/action-gh-release@v1
-        if: ${{ success() }}
+        if: ${{ inputs.publish_release == 'true' && success() }}
         with:
           tag_name: ${{ inputs.release-tag }}
-          files: app/build/outputs/apk/meta/release/*
+          files: YinnClash-${{ inputs.release-tag }}-arm64.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # ✅ Changelog builder: jangan bikin workflow fail kalau tag sebelumnya belum ada
       - name: Release Changelog Builder
+        if: ${{ inputs.publish_release == 'true' && success() }}
         uses: mikepenz/release-changelog-builder-action@v4.1.1
+        continue-on-error: true
         with:
           configurationJson: |
             {
-              "ignore_labels": [
-                "Update"
-              ]
+              "ignore_labels": ["Update"]
             }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
