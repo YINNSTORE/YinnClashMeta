@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Input Version: '
+        description: 'Input Version (contoh: 2.11.22 atau v2.11.22)'
         required: true
         type: string
       publish_release:
-        description: 'Publish GitHub Release: '
+        description: 'Publish GitHub Release? (true = signed release)'
         required: true
         type: choice
         options: ["false", "true"]
         default: "false"
       version_suffix:
-        description: 'App - YinnClash MetaBoxUi'
+        description: 'App - YinnClash MetaBoxUi (opsional: -zivpn / -alpha)'
         required: false
         type: string
         default: ""
@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           VERSION_INPUT="${{ inputs.version }}"
-          VERSION_INPUT="${VERSION_INPUT#v}"  # remove leading v if exists
+          VERSION_INPUT="${VERSION_INPUT#v}"
 
           if [[ ! "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid version format. Use x.y.z or vx.y.z (contoh: 2.11.22 / v2.11.22)"
@@ -77,10 +77,6 @@ jobs:
           echo "versionName=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION_INPUT" >> $GITHUB_OUTPUT
-
-          echo "VersionName: $VERSION_NAME"
-          echo "VersionCode: $VERSION_CODE"
-          echo "Tag: v$VERSION_INPUT"
 
       - name: Re-write version
         uses: Devofure/advance-android-version-actions@v1.5
@@ -102,34 +98,47 @@ jobs:
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      # Signing hanya untuk publish release (MetaRelease butuh keystore)
-      - name: Signing properties
+      # ✅ Kalau publish_release=false: bikin debug keystore lokal & inject ke Gradle
+      - name: Create debug keystore (for non-publish builds)
+        if: ${{ inputs.publish_release == 'false' }}
+        shell: bash
+        run: |
+          keytool -genkeypair -v \
+            -keystore debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      # ✅ Kalau publish_release=true: pakai signing.properties dari Secrets
+      - name: Signing properties (publish only)
         if: ${{ inputs.publish_release == 'true' }}
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          touch signing.properties
+          rm -f signing.properties
           echo keystore.password="$SIGNING_STORE_PASSWORD" > signing.properties
           echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
           echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
 
-      # ✅ FIX UTAMA:
-      # - publish_release=false  => build MetaDebug (no keystore, auto-signed debug)
-      # - publish_release=true   => build MetaRelease (signed)
-      - name: Build APK Release
+      - name: Build APK (MetaDebug if no publish)
         shell: bash
         run: |
           if [ "${{ inputs.publish_release }}" = "true" ]; then
             echo "Building MetaRelease (SIGNED)..."
             ./gradlew --no-daemon app:assembleMetaRelease --stacktrace --info
           else
-            echo "Building MetaDebug (NO KEYSTORE)..."
-            ./gradlew --no-daemon app:assembleMetaDebug --stacktrace --info
+            echo "Building MetaDebug (NO KEYSTORE / injected debug signing)..."
+            ./gradlew --no-daemon app:assembleMetaDebug --stacktrace --info \
+              -Pandroid.injected.signing.store.file="$PWD/debug.keystore" \
+              -Pandroid.injected.signing.store.password=android \
+              -Pandroid.injected.signing.key.alias=androiddebugkey \
+              -Pandroid.injected.signing.key.password=android
           fi
 
-      # Selalu upload artifact biar bisa download dari Actions
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: ${{ success() }}
@@ -138,7 +147,6 @@ jobs:
           path: |
             app/build/outputs/apk/**/**/*.apk
 
-      # Tag + GitHub Release hanya kalau publish_release=true
       - name: Create Tag
         if: ${{ inputs.publish_release == 'true' }}
         run: |
