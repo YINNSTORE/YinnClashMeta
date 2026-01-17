@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version (contoh: 2.11.22 atau v2.11.22)'
+        description: 'Input Version: '
         required: true
         type: string
       publish_release:
