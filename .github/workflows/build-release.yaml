@@ -118,7 +118,7 @@ jobs:
       # ✅ FIX UTAMA:
       # - publish_release=false  => build MetaDebug (no keystore, auto-signed debug)
       # - publish_release=true   => build MetaRelease (signed)
-      - name: Build APK (MetaDebug if no publish)
+      - name: Build APK Release
         shell: bash
         run: |
           if [ "${{ inputs.publish_release }}" = "true" ]; then
