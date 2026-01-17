@@ -75,16 +75,37 @@ YinnClash menggunakan **CI/CD GitHub Actions** untuk otomatisasi build.
 
 ---
 
-## 🧠 Lisensi & Kredit
+## 🧠 Kredit & Apresiasi (Original Credits)
 
-Project ini **berbasis open-source**, dengan penghargaan penuh kepada:
+Project ini **tidak dibuat dari nol**, dan berdiri di atas kerja keras komunitas open-source.
 
-- MetaCubeX & komunitas Clash Meta
-- Kontributor open-source terkait
+Penghargaan penuh diberikan kepada:
 
-> YinnClash adalah **rebrand independen**  
-> ❌ BUKAN aplikasi resmi MetaCubeX  
-> ❌ Tidak berafiliasi dengan Clash Meta official
+- **MetaCubeX**  
+  Pengembang utama **Clash Meta** dan ekosistem terkait  
+  Repository: https://github.com/MetaCubeX
+
+- **Clash Meta for Android**  
+  Project Android client utama yang menjadi dasar aplikasi ini  
+  Repository: https://github.com/MetaCubeX/ClashMetaForAndroid
+
+- **Clash / Meta Core Contributors**  
+  Untuk pengembangan core networking, protocol, dan optimasi performa
+
+- Seluruh kontributor open-source terkait  
+  (Go libraries, Android components, dan tooling)
+
+> 🙏 Tanpa project open-source di atas, **YinnClash tidak akan ada**.
+
+---
+
+## ⚖️ Lisensi & Pernyataan
+
+- Project ini **mengikuti lisensi asli** dari project upstream
+- **YinnClash adalah rebrand independen**
+- ❌ BUKAN aplikasi resmi MetaCubeX
+- ❌ Tidak berafiliasi dengan Clash Meta official
+- ❌ Tidak menggunakan logo / branding resmi MetaCubeX
 
 ---
 
