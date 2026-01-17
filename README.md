@@ -1,87 +1,110 @@
-## Clash Meta for Android
+# 🚀 YinnClash
 
-A Graphical user interface of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta) for Android
+> ⚡ **Modern & Powerful Network Client for Android**  
+> Rebranded and customized build based on open-source Clash Meta technology.
 
-### Feature
+---
 
-Feature of [Clash.Meta](https://github.com/MetaCubeX/Clash.Meta)
+## ✨ Tentang YinnClash
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/com.github.metacubex.clash.meta/)
+**YinnClash** adalah aplikasi Android berbasis *network client* yang dirancang untuk pengguna tingkat lanjut yang membutuhkan kontrol penuh terhadap koneksi jaringan mereka.
 
-### Requirement
+Project ini merupakan hasil **rebranding dan modifikasi independen**, dengan fokus pada:
+- Performa tinggi
+- Stabilitas koneksi
+- UI bersih & modern
+- Build fleksibel (Debug / Release)
 
-- Android 5.0+ (minimum)
-- Android 7.0+ (recommend)
-- `armeabi-v7a` , `arm64-v8a`, `x86` or `x86_64` Architecture
+---
 
-### Build
+## 🔥 Fitur Utama
 
-1. Update submodules
+- 🌐 Dukungan multi-protocol (Meta Core)
+- ⚙️ Rule-based routing system
+- 📊 Real-time traffic & connection monitor
+- 🧩 Modular architecture (Core / Service / Design)
+- 🎨 UI modern & ringan
+- 🛠️ Build automation via GitHub Actions
+- 📦 APK siap pakai (tanpa Play Store)
 
-   ```bash
-   git submodule update --init --recursive
-   ```
+---
 
-2. Install **OpenJDK 11**, **Android SDK**, **CMake** and **Golang**
+## 📱 Platform
 
-3. Create `local.properties` in project root with
+- **Android** (ARM64, ARMv7, x86, x86_64)
+- Minimum Android: **Android 7+**
+- Target: **Advanced / Power User**
 
-   ```properties
-   sdk.dir=/path/to/android-sdk
-   ```
+---
 
-4. (Optional) Custom app package name. Add the following configuration to `local.properties`.
+## 🏗️ Build & Release
 
-   ```properties
-   # config your ownn applicationId, or it will be 'com.github.metacubex.clash'
-   custom.application.id=com.my.compile.clash
-   # remove application id suffix, or the applicaion id will be 'com.github.metacubex.clash.alpha'
-   remove.suffix=true
+YinnClash menggunakan **CI/CD GitHub Actions** untuk otomatisasi build.
 
-5. Create `signing.properties` in project root with
+### 🔹 Build Mode
+- **MetaDebug**  
+  - Tidak perlu keystore  
+  - Auto-signed (debug)  
+  - Cocok untuk testing & distribusi bebas  
 
-   ```properties
-   keystore.path=/path/to/keystore/file
-   keystore.password=<key store password>
-   key.alias=<key alias>
-   key.password=<key password>
-   ```
+- **MetaRelease**  
+  - Signed (keystore)  
+  - Siap untuk rilis resmi / jangka panjang  
 
-6. Build
+---
 
-   ```bash
-   ./gradlew app:assembleAlphaRelease
-   ```
+## ⬇️ Download
 
-### Automation
+📦 Semua build tersedia di halaman **GitHub Releases**:
 
-APP package name is `com.github.metacubex.clash.meta`
+👉 **Releases** → Download APK sesuai arsitektur perangkat kamu
 
-- Toggle Clash.Meta service status
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.TOGGLE_CLASH`
-- Start Clash.Meta service
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.START_CLASH`
-- Stop Clash.Meta service
-  - Send intent to activity `com.github.kr328.clash.ExternalControlActivity` with action `com.github.metacubex.clash.meta.action.STOP_CLASH`
-- Import a profile
-  - URL Scheme `clash://install-config?url=<encoded URI>` or `clashmeta://install-config?url=<encoded URI>`
+> 💡 Disarankan menggunakan versi **arm64-v8a** untuk perangkat modern.
 
-### Contribution and Project Maintenance
+---
 
-#### Meta Kernel
+## ⚠️ Catatan Penting
 
-- CMFA uses the kernel from `android-real` branch under `MetaCubeX/Clash.Meta`, which is a merge of the main `Alpha` branch and `android-open`.
-  - If you want to contribute to the kernel, make PRs to `Alpha` branch of the Meta kernel repository.
-  - If you want to contribute Android-specific patches to the kernel, make PRs to  `android-open` branch of the Meta kernel repository.
+- Aplikasi ini **bukan VPN gratis publik**
+- Tidak menyediakan server bawaan
+- Konfigurasi koneksi sepenuhnya ditentukan oleh pengguna
+- Cocok untuk:
+  - Private server
+  - Advanced networking
+  - Educational & research purpose
 
-#### Maintenance
+---
 
-- When `MetaCubeX/Clash.Meta` kernel is updated to a new version, the `Update Dependencies` actions in this repo will be triggered automatically.
-  - It will pull the new version of the meta kernel, update all the golang dependencies, and create a PR without manual intervention.
-  - If there is any compile error in PR, you need to fix it before merging. Alternatively, you may merge the PR directly.
-- Manually triggering `Build Pre-Release` actions will compile and publish a `PreRelease` version.
-- Manually triggering `Build Release` actions will compile, tag and publish a `Release` version.
-  - You must fill the blank `Release Tag` with the tag you want to release in the format of `v1.2.3`.
-  - `versionName` and `versionCode` in `build.gradle.kts` will be automatically bumped to the tag you filled above.
+## 🧠 Lisensi & Kredit
+
+Project ini **berbasis open-source**, dengan penghargaan penuh kepada:
+
+- MetaCubeX & komunitas Clash Meta
+- Kontributor open-source terkait
+
+> YinnClash adalah **rebrand independen**  
+> ❌ BUKAN aplikasi resmi MetaCubeX  
+> ❌ Tidak berafiliasi dengan Clash Meta official
+
+---
+
+## 📬 Kontak & Dukungan
+
+Jika kamu menggunakan YinnClash untuk kebutuhan private atau pengembangan lanjutan:
+
+- 📧 Support: *via GitHub Issues*
+- 🛠️ Development: *Private build supported*
+
+---
+
+## ⭐ Dukungan
+
+Jika project ini membantu kamu:
+- ⭐ Star repository ini
+- 🧪 Laporkan bug / issue
+- 💡 Kirim saran pengembangan
+
+---
+
+> **YinnClash** — Control your network, your way.  
+> ⚡ Fast • Stable • Customizable
