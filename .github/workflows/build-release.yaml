@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Input Version (contoh: 2.11.22 atau v2.11.22)'
+        description: 'Input Version: '
         required: true
         type: string
       publish_release:
-        description: 'Publish GitHub Release? (true = butuh keystore/secrets)'
+        description: 'Publish GitHub Release: '
         required: true
         type: choice
         options: ["false", "true"]
         default: "false"
       version_suffix:
-        description: 'App - YinnClash MetaBoxUi (opsional: -zivpn / -alpha)'
+        description: 'App - YinnClash MetaBoxUi'
         required: false
         type: string
         default: ""
