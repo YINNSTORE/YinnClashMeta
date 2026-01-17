@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Input Version: '
+        description: 'Input Version (contoh: 2.11.22 atau v2.11.22)'
         required: true
         type: string
       publish_release:
-        description: 'Publish GitHub Release?'
+        description: 'Publish GitHub Release? (true = butuh keystore/secrets)'
         required: true
         type: choice
-        options: [ "false", "true" ]
+        options: ["false", "true"]
         default: "false"
       version_suffix:
-        description: 'App - YinnClash MetaBoxUi'
+        description: 'App - YinnClash MetaBoxUi (opsional: -zivpn / -alpha)'
         required: false
         type: string
         default: ""
@@ -43,10 +43,11 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version: "1.23.x"
           check-latest: true
 
-      - uses: actions/cache@v4
+      - name: Cache Go
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -60,9 +61,8 @@ jobs:
         shell: bash
         run: |
           VERSION_INPUT="${{ inputs.version }}"
-          VERSION_INPUT="${VERSION_INPUT#v}"               # remove leading v if exists
+          VERSION_INPUT="${VERSION_INPUT#v}"  # remove leading v if exists
 
-          # validate simple semver x.y.z
           if [[ ! "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid version format. Use x.y.z or vx.y.z (contoh: 2.11.22 / v2.11.22)"
             exit 1
@@ -89,7 +89,6 @@ jobs:
           versionCode: ${{ steps.process-version.outputs.versionCode }}
           versionName: ${{ steps.process-version.outputs.versionName }}
 
-      # ✅ Dibuat aman: tidak push/tag otomatis (biar tidak ganggu repo)
       - name: Commit changes locally (no push)
         run: |
           git config --global user.name 'GitHub Action'
@@ -103,7 +102,7 @@ jobs:
           sudo update-ca-certificates
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      # ✅ Optional: Signing hanya kalau kamu mau publish release (atau kalau project butuh)
+      # Signing hanya untuk publish release (MetaRelease butuh keystore)
       - name: Signing properties
         if: ${{ inputs.publish_release == 'true' }}
         env:
@@ -116,10 +115,30 @@ jobs:
           echo key.alias="$SIGNING_KEY_ALIAS" >> signing.properties
           echo key.password="$SIGNING_KEY_PASSWORD" >> signing.properties
 
-      - name: Release Build
-        run: ./gradlew --no-daemon app:assembleMetaRelease
+      # ✅ FIX UTAMA:
+      # - publish_release=false  => build MetaDebug (no keystore, auto-signed debug)
+      # - publish_release=true   => build MetaRelease (signed)
+      - name: Build APK (MetaDebug if no publish)
+        shell: bash
+        run: |
+          if [ "${{ inputs.publish_release }}" = "true" ]; then
+            echo "Building MetaRelease (SIGNED)..."
+            ./gradlew --no-daemon app:assembleMetaRelease --stacktrace --info
+          else
+            echo "Building MetaDebug (NO KEYSTORE)..."
+            ./gradlew --no-daemon app:assembleMetaDebug --stacktrace --info
+          fi
 
-      # ✅ Tag + GitHub Release hanya kalau publish_release=true
+      # Selalu upload artifact biar bisa download dari Actions
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ success() }}
+        with:
+          name: apks
+          path: |
+            app/build/outputs/apk/**/**/*.apk
+
+      # Tag + GitHub Release hanya kalau publish_release=true
       - name: Create Tag
         if: ${{ inputs.publish_release == 'true' }}
         run: |
